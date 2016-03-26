@@ -5,9 +5,10 @@ c1 = pickle.load(open("a.p", "rb")) # for dependency with h->d
 c2 = copy.deepcopy(c1)  # for dependency with d<-h
 ln = 0  # sentence iterator
 lv = 0  # reduction level
-rec = False # true if in the recurrent reduction
+rec = False # true if in the recursive reduction
 pair = tuple()  # current dependency pair
 pcnt = 0    # proposal count
+side = 'left' # means which side of the dependency is the head
 
 cs = list() # complete sentence
 cs.append(('DT',1,1))
@@ -22,21 +23,23 @@ def main():
     global c2
     global rec
     global pcnt
+    global side
     print_corpus()
     while True:
         reduced = reduce()
         if not rec and not reduced:
             break
         elif not rec and reduced:
+            # change to NgramModule.choose_side() method, which returns 'left' (c1 has higher prob) or 'right'
+            side = choose_side()
             rec = True
         elif rec and not reduced:
             rec = False
         else:
+            # use the initial side for the dependency pair in recursive reduction
+            print 'Use previous direction "{}" in recursive reduction for dependency {}'.format(side, pair)
             pass
         if reduced:
-            # change to NgramModule.choose_side() method, which returns 'left'(c1 has higher prob) or 'right'
-            # the same N-gram model is used in recurrent reduction to decide between newly-reduced c1 and c2
-            side = choose_side()
             if side == 'left':
                 c2 = copy.deepcopy(c1)
             else:
