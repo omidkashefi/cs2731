@@ -1,5 +1,63 @@
 import pickle
 import copy
+from nltk.util import ngrams
+import operator
+
+
+#===========================================================================
+#       Dependency Model
+#===========================================================================
+
+class DependencyModel:
+    def __init__(self):
+        self.pair = ()
+
+    def _compute_model_parameters(self, side):
+        raw_bigram = {}
+        s = next_sent(side)
+        while s != None:
+            for dep_pair in ngrams(s, 2):
+                if raw_bigram.has_key(dep_pair):
+                    raw_bigram[dep_pair] += 1
+                else:
+                    raw_bigram[dep_pair] = 1
+
+            s = next_sent(side)        
+
+        best_pair = None
+        model_power = 0
+        max_prob = 0
+        for key, value in raw_bigram.items():
+            model_power1 = model_power + value
+            if value > max_prob:
+                best_pair = key
+                max_prob = value
+
+        return {"model": model_power, "pair": best_pair}
+
+    def get_dependency(self):
+        #first iteration
+        if self.pair == ():
+            res = self._compute_model_parameters(1)
+            self.pair = res["pair"]
+
+        return self.pair   
+
+    def decide_side(self):
+        res1 = self._compute_model_parameters(1)
+        res2 = self._compute_model_parameters(2)
+        
+        side = "left"
+        self.pair = res1["pair"]
+        if (res2["model"] > res1["model"]):
+            self.pair = res2["pair"]
+            side = "right"
+        
+        return side
+
+#===========================================================================
+#       HAC Implementation
+#===========================================================================
 
 c1 = pickle.load(open("a.p", "rb")) # for dependency with h->d
 c2 = copy.deepcopy(c1)  # for dependency with d<-h
@@ -12,13 +70,17 @@ cs.append(('DT',1,1))
 cs.append(('NN',-1,-1))
 
 def main():
+    global dep_model
+    dep_model = DependencyModel()
     global c1
     global c2
     global pcnt
     print 'Corpus before reduction:'
-    print_raw_corpus()
+    #print_raw_corpus()
+    print_corpus()
     while reduce():
-        side = choose_side()
+        #side = choose_side()
+        side = dep_model.decide_side()
         if side == 'left':
             c2 = copy.deepcopy(c1)
         else:
@@ -29,19 +91,21 @@ def main():
     pickle.dump(c1, open("b.p", "wb"))    
 
 def reduce():
+    global dep_model
     global c1
     global c2
     global lv
     global pcnt
     reduced = False
-    pair = propose()
-    print 'Porposed pair: {}'.format(pair)
+    pair = dep_model.get_dependency()
+    #pair = propose()
+    #print 'Porposed pair: {}'.format(pair)
     pcnt += 1
     if pair == None:
         # no more proposal
         return False
     [tg1, tg2] = pair
-    print (tg1, tg2)
+    #print (tg1, tg2)
     for sidx,s in enumerate(c1):
         if complete(s):
             continue
@@ -55,7 +119,7 @@ def reduce():
                 # begin reduce
                 reduced = True
                 s[i] = (tg2, h, lv)
-                print 'c1 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
+                #print 'c1 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
                 skip += 1
                 continue
             if s[i][0] == tg1:
@@ -75,7 +139,7 @@ def reduce():
             if s[i][0] == tg1 and i == h - skip -1:
                 reduced = True
                 s[i] = (tg1, h, lv)
-                print 'c2 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
+                #print 'c2 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
                 skip += 1
                 continue
             if s[i][0] == tg2:
