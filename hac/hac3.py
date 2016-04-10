@@ -2,6 +2,7 @@ import pickle
 import copy
 from nltk.util import ngrams
 import operator
+from math import log
 
 
 #===========================================================================
@@ -13,27 +14,33 @@ class DependencyModel:
         self.pair = ()
 
     def _compute_model_parameters(self, side):
+        best_pair = None
+        max_prob = 0
         raw_bigram = {}
         s = next_sent(side)
         while s != None:
             for dep_pair in ngrams(s, 2):
                 if raw_bigram.has_key(dep_pair):
                     raw_bigram[dep_pair] += 1
+                    #due to performance gain, compute max while creating bigrams
+                    if raw_bigram[dep_pair] > max_prob:
+                        best_pair = dep_pair
+                        max_prob = raw_bigram[dep_pair]
                 else:
                     raw_bigram[dep_pair] = 1
 
             s = next_sent(side)        
 
-        best_pair = None
-        model_power = 0
-        max_prob = 0
-        for key, value in raw_bigram.items():
-            model_power1 = model_power + value
-            if value > max_prob:
-                best_pair = key
-                max_prob = value
+        model_probability = 0
+        model_sum = float(sum(raw_bigram.values()))
 
-        return {"model": model_power, "pair": best_pair}
+        #due to performance gain
+        view = raw_bigram.values()
+        for value in view:
+            p = value/model_sum
+            model_probability += p * log(p,2)
+
+        return {"model": model_probability, "pair": best_pair}
 
     def get_dependency(self):
         #first iteration
@@ -47,6 +54,7 @@ class DependencyModel:
         res1 = self._compute_model_parameters(1)
         res2 = self._compute_model_parameters(2)
         
+        print("Left model: {0}, right model: {1}".format(res1["model"], res2["model"]))
         side = "left"
         self.pair = res1["pair"]
         if (res2["model"] > res1["model"]):
@@ -81,6 +89,7 @@ def main():
     while reduce():
         #side = choose_side()
         side = dep_model.decide_side()
+        print ("side:\t", side)
         if side == 'left':
             c2 = copy.deepcopy(c1)
         else:
@@ -99,7 +108,7 @@ def reduce():
     reduced = False
     pair = dep_model.get_dependency()
     #pair = propose()
-    #print 'Porposed pair: {}'.format(pair)
+    print 'Porposed pair: {}'.format(pair)
     pcnt += 1
     if pair == None:
         # no more proposal
@@ -119,7 +128,7 @@ def reduce():
                 # begin reduce
                 reduced = True
                 s[i] = (tg2, h, lv)
-                #print 'c1 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
+                print 'c1 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
                 skip += 1
                 continue
             if s[i][0] == tg1:
@@ -139,7 +148,7 @@ def reduce():
             if s[i][0] == tg1 and i == h - skip -1:
                 reduced = True
                 s[i] = (tg1, h, lv)
-                #print 'c2 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
+                print 'c2 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
                 skip += 1
                 continue
             if s[i][0] == tg2:
