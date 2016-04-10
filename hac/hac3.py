@@ -85,11 +85,10 @@ def main():
     global pcnt
     print 'Corpus before reduction:'
     #print_raw_corpus()
-    print_corpus()
+    #print_corpus()
     while reduce():
         #side = choose_side()
         side = dep_model.decide_side()
-        print ("side:\t", side)
         if side == 'left':
             c2 = copy.deepcopy(c1)
         else:
