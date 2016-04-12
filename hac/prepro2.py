@@ -1,8 +1,11 @@
 import pickle
 import re
+import string
+
+punct = set(string.punctuation)
 
 tagged_sents = "/afs/cs.pitt.edu/usr0/xiaozhong/public/cs2731/pos_tagged_sentences.txt"
-sent_cnt_limit = 1000000
+sent_cnt_limit = 1000
 default_head_idx = -1
 default_reduc_lv = -1
 
@@ -12,10 +15,12 @@ def main():
         sent_cnt = 0;
         for sent in f:
             res = list()
-            tuples = re.findall('(?<=\s)\(.*?\)(?=\s)', sent)
+            tuples = re.findall('\(.*?\)(?=\s)', sent)
             for t in tuples:
                 #print t
                 word, tag = re.findall('(?<=["\'])\S+(?=["\'])', t)
+                if tag[0] in punct or word == '&':
+                    continue
                 if tag.startswith('VB'):
                     tt = "{},{}".format(tag,word.lower())
                     res.append((tt, default_head_idx, default_reduc_lv))
@@ -25,8 +30,8 @@ def main():
             sent_cnt += 1
             if (sent_cnt >= sent_cnt_limit):
                 break
-    #for s in corpus:
-    #    print s
+#    for s in corpus:
+#        print s
     pickle.dump(corpus, open('a.p', 'wb'))
 
 if __name__ == "__main__":

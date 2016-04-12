@@ -15,8 +15,8 @@ def main():
     global c1
     global c2
     global pcnt
-    print 'Corpus before reduction:'
-    print_raw_corpus()
+#    print 'Corpus before reduction:'
+#    print_raw_corpus()
     while reduce():
         side = choose_side()
         if side == 'left':
@@ -24,8 +24,8 @@ def main():
         else:
             c1 = c2
             c2 = copy.deepcopy(c1)
-    print 'Corpus after reduction:'
-    print_raw_corpus()
+#    print 'Corpus after reduction:'
+#    print_raw_corpus()
     pickle.dump(c1, open("b.p", "wb"))    
 
 def reduce():
@@ -35,13 +35,13 @@ def reduce():
     global pcnt
     reduced = False
     pair = propose()
-    print 'Porposed pair: {}'.format(pair)
+#    print 'Porposed pair: {}'.format(pair)
     pcnt += 1
     if pair == None:
         # no more proposal
         return False
     [tg1, tg2] = pair
-    print (tg1, tg2)
+#    print (tg1, tg2)
     for sidx,s in enumerate(c1):
         if complete(s):
             continue
@@ -55,7 +55,7 @@ def reduce():
                 # begin reduce
                 reduced = True
                 s[i] = (tg2, h, lv)
-                print 'c1 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
+#                print 'c1 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
                 skip += 1
                 continue
             if s[i][0] == tg1:
@@ -75,7 +75,7 @@ def reduce():
             if s[i][0] == tg1 and i == h - skip -1:
                 reduced = True
                 s[i] = (tg1, h, lv)
-                print 'c2 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
+#                print 'c2 suggests to set sentence {} word {} to {}'.format(sidx, i, s[i])
                 skip += 1
                 continue
             if s[i][0] == tg2:
