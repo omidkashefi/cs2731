@@ -2,7 +2,9 @@ import pickle
 import re
 import string
 
-punct = set(string.punctuation)
+punct1 = [s for s in string.punctuation]
+punct2 = ['``', "''", '...', '--']
+punct = set(punct1 + punct2)
 
 tagged_sents = "/afs/cs.pitt.edu/usr0/xiaozhong/public/cs2731/pos_tagged_sentences.txt"
 sent_cnt_limit = 1000
@@ -19,7 +21,7 @@ def main():
             for t in tuples:
                 #print t
                 word, tag = re.findall('(?<=["\'])\S+(?=["\'])', t)
-                if tag[0] in punct or word == '&':
+                if word in punct:
                     continue
                 if tag.startswith('VB'):
                     tt = "{},{}".format(tag,word.lower())
